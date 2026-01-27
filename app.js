@@ -6,25 +6,17 @@ const dotenv = require("dotenv");
 dotenv.config({});
 const cors = require("cors");
 
-const allowedOrigins = [
-  "http://localhost:5173", // dev frontend
-  "https://dev-tinder-frontend-rust.vercel.app", // deployed frontend
-  // add more origins if needed
-];
-
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow non-browser requests like Postman
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
+    origin: "*", // allow all origins
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// handle preflight for all routes
+app.options("*", cors());
+
 
 
 app.use(express.json());
