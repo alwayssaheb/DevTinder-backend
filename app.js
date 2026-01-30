@@ -8,14 +8,21 @@ const cors = require("cors");
 
 app.use(
   cors({
-    origin: "*", // allow all origins
+    origin: (origin, callback) => {
+      // allow non-browser tools (Postman/curl) with no origin
+      if (!origin) return callback(null, true);
+
+      // reflect the requesting origin (acts like "allow all" but not "*")
+      return callback(null, origin);
+    },
+    credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// handle preflight for all routes
 app.options("*", cors());
+
 
 
 
