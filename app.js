@@ -1,20 +1,20 @@
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
 const connectDB = require("./src/Config/database");
+const redisClient = require("./src/Config/redis");
 const cookieParser = require("cookie-parser");
-const app = express();
 const dotenv = require("dotenv");
-dotenv.config({});
 const cors = require("cors");
+const { initializeSocket } = require("./src/socket/socket");
+
+dotenv.config({});
+
+const app = express();
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // allow non-browser tools (Postman/curl) with no origin
-      if (!origin) return callback(null, true);
-
-      // reflect the requesting origin (acts like "allow all" but not "*")
-      return callback(null, origin);
-    },
+    origin: process.env.CLIENT_URL,
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -23,30 +23,43 @@ app.use(
 
 app.options("*", cors());
 
-
-
-
 app.use(express.json());
 app.use(cookieParser());
 
-//routes
+// routes
 const authRouter = require("./src/routes/auth");
 const profileRouter = require("./src/routes/profile");
 const requestRouter = require("./src/routes/request");
 const userRouter = require("./src/routes/user");
+const chatRouter = require("./src/routes/chat");
+const notificationRouter = require("./src/routes/notification");
 
 app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestRouter);
 app.use("/", userRouter);
+app.use("/", chatRouter);
+app.use("/", notificationRouter);
 
-//database connect before server
-connectDB().then(() => {
-  try {
-    app.listen(process.env.PORT, () => {
-      console.log(`Server running on ` + process.env.PORT);
-    });
-  } catch (error) {
-    console.log(error);
-  }
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  },
 });
+
+initializeSocket(io);
+
+connectDB()
+  .then(async () => {
+    await redisClient.connect();
+
+    server.listen(process.env.PORT, () => {
+      console.log(`Server running on ${process.env.PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.log("Startup failed:", error);
+  });
