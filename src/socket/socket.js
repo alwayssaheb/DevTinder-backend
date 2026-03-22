@@ -2,9 +2,9 @@ const jwt = require("jsonwebtoken");
 const cookie = require("cookie");
 const Chat = require("../Models/chat");
 const User = require("../Models/user");
+const Notification = require("../Models/notification");
 const { ConnectionRequestModel } = require("../Models/connectionRequest");
 const redisClient = require("../Config/redis");
-const { messageQueue } = require("../Config/queue");
 
 const getUserFromSocket = async (socket) => {
   try {
@@ -99,17 +99,27 @@ const initializeSocket = (io) => {
           createdAt: savedMessage.createdAt,
         };
 
-        try {
-          await messageQueue.add("newMessageNotification", {
-            senderId: userId,
-            receiverId: toUserId,
-            text: cleanText,
-            messageId: savedMessage._id.toString(),
-            createdAt: savedMessage.createdAt,
-          });
-        } catch (queueError) {
-          console.error("Queue add failed:", queueError.message);
-        }
+        const savedNotification = await Notification.create({
+          userId: toUserId,
+          fromUserId: userId,
+          type: "new_message",
+          message: cleanText,
+          chatMessageId: savedMessage._id,
+          isRead: false,
+        });
+
+        const notificationPayload = {
+          _id: savedNotification._id.toString(),
+          fromUserId: {
+            _id: user._id.toString(),
+            firstName: user.firstName,
+            lastName: user.lastName,
+            photoURL: user.photoURL,
+          },
+          message: cleanText,
+          isRead: false,
+          createdAt: savedNotification.createdAt,
+        };
 
         socket.emit("messageSent", payload);
 
@@ -117,19 +127,7 @@ const initializeSocket = (io) => {
 
         if (receiverSocketId) {
           io.to(receiverSocketId).emit("receiveMessage", payload);
-
-          io.to(receiverSocketId).emit("newNotification", {
-            _id: `temp_${savedMessage._id.toString()}`,
-            fromUserId: {
-              _id: user._id.toString(),
-              firstName: user.firstName,
-              lastName: user.lastName,
-              photoURL: user.photoURL,
-            },
-            message: cleanText,
-            isRead: false,
-            createdAt: savedMessage.createdAt,
-          });
+          io.to(receiverSocketId).emit("newNotification", notificationPayload);
         }
       } catch (err) {
         console.log("sendMessage error:", err.message);
