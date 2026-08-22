@@ -6,11 +6,16 @@ const bcrypt = require("bcryptjs");
 const { validateSignupData } = require("../utils/validation");
 
 // Helper function for cookie options
+const isProduction =
+  process.env.NODE_ENV === "production" ||
+  process.env.VERCEL === "1";
+
 const cookieOptions = {
-  httpOnly: true,           // can't access cookie via JS
-  secure: process.env.NODE_ENV === "production", // only HTTPS in prod
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // cross-site for prod
-  maxAge: 8 * 3600000,      // 8 hours
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
+  path: "/",
+  maxAge: 8 * 60 * 60 * 1000,
 };
 
 //signup api for signing the user
