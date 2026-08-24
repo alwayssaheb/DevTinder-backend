@@ -200,4 +200,4 @@ npm run worker
 
 Built by [Saheb Singh](https://github.com/alwayssaheb).
 
-[Portfolio](https://you-three-snowy.vercel.app) · [LinkedIn](https://www.linkedin.com/in/saheb-singh-b3a026195/) · [Email](mailto:saheb.singh.dev@gmail.com)
+[Portfolio](https://you-three-snowy.vercel.app) · [LinkedIn](https://www.linkedin.com/in/saheb-singh-b3a026195/) · [Email](mailto:saheb.nagi29@gmail.com)
